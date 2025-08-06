@@ -1,8 +1,11 @@
 import 'dart:ui';
-
+import 'package:ayur_care_app/providers/auth_provider.dart';
+import 'package:ayur_care_app/screens/booking_screen.dart';
+import 'package:ayur_care_app/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ayur_care_app/core/constants/app_constants.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
@@ -13,44 +16,28 @@ class LoginPage extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          
           Container(
-  height: MediaQuery.of(context).size.height * 0.3,
-  width: double.infinity,
-  child: Stack(
-    fit: StackFit.expand,
-    children: [
-      // Background Image
-      Image.asset(
-        'assets/background.jpg',
-        fit: BoxFit.cover,
-      ),
-
-      // Blur effect
-      BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
-        child: Container(
-          color: Colors.black.withOpacity(0), 
-        ),
-      ),
-
-      // Centered Logo
-      Center(
-        child: Image.asset(
-          'assets/logo.png',
-          width: 80,
-          height: 80,
-        ),
-      ),
-    ],
-  ),
-),
-          // White Form Container
+            height: MediaQuery.of(context).size.height * 0.3,
+            width: double.infinity,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset('assets/background.jpg', fit: BoxFit.cover),
+                BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+                  child: Container(color: Colors.black.withOpacity(0)),
+                ),
+                Center(
+                  child: Image.asset('assets/logo.png', width: 80, height: 80),
+                ),
+              ],
+            ),
+          ),
           Expanded(
             child: Container(
               width: double.infinity,
-              padding: EdgeInsets.all(24),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
@@ -59,9 +46,7 @@ class LoginPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: 16),
-
-                    /// 👇 Login Heading with Google Fonts (Poppins)
+                    const SizedBox(height: 16),
                     Text(
                       'Login Or Register To Book\nYour Appointments',
                       style: GoogleFonts.poppins(
@@ -69,16 +54,13 @@ class LoginPage extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
                         height: 1.4,
-                        textStyle: TextStyle(
+                        textStyle: const TextStyle(
                           letterSpacing: 0,
                           decoration: TextDecoration.none,
                         ),
                       ),
                     ),
-
-                    SizedBox(height: 32),
-
-                    // Email Label
+                    const SizedBox(height: 32),
                     Text(
                       'Email',
                       style: GoogleFonts.poppins(
@@ -87,12 +69,10 @@ class LoginPage extends StatelessWidget {
                         color: Colors.black87,
                       ),
                     ),
-                    SizedBox(height: 8),
-
-                    // Email Field
+                    const SizedBox(height: 8),
                     Container(
                       decoration: BoxDecoration(
-                        color: Color(0xFFF5F5F5),
+                        color: const Color(0xFFF5F5F5),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: TextField(
@@ -104,16 +84,14 @@ class LoginPage extends StatelessWidget {
                             fontSize: 14,
                           ),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
+                          contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 16,
                           ),
                         ),
                       ),
                     ),
-                    SizedBox(height: 20),
-
-                    // Password Label
+                    const SizedBox(height: 20),
                     Text(
                       'Password',
                       style: GoogleFonts.poppins(
@@ -122,12 +100,10 @@ class LoginPage extends StatelessWidget {
                         color: Colors.black87,
                       ),
                     ),
-                    SizedBox(height: 8),
-
-                    // Password Field
+                    const SizedBox(height: 8),
                     Container(
                       decoration: BoxDecoration(
-                        color: Color(0xFFF5F5F5),
+                        color: const Color(0xFFF5F5F5),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: TextField(
@@ -140,22 +116,47 @@ class LoginPage extends StatelessWidget {
                             fontSize: 14,
                           ),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
+                          contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 16,
                           ),
                         ),
                       ),
                     ),
-                    SizedBox(height: 40),
-
-                    // Login Button
+                    const SizedBox(height: 40),
                     SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: () {
-                          // Handle login
+                        onPressed: () async {
+                          final username = emailController.text.trim();
+                          final password = passwordController.text.trim();
+
+                          if (username.isEmpty || password.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Please enter all fields")),
+                            );
+                            return;
+                          }
+
+                          final authProvider = Provider.of<AuthProvider>(
+                            context,
+                            listen: false,
+                          );
+                          final success = await authProvider.login(username, password);
+
+                          if (success) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (_) =>  HomeScreen()),
+                            );
+                          } else {
+                            print(authProvider.errorMessage);
+                            ScaffoldMessenger.of(context).showSnackBar(
+
+                              SnackBar(content: Text(authProvider.errorMessage ?? "Login failed")),
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryColor,
@@ -174,9 +175,7 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(height: 24),
-
-                    // Terms and Conditions
+                    const SizedBox(height: 24),
                     Center(
                       child: RichText(
                         textAlign: TextAlign.center,
@@ -187,26 +186,25 @@ class LoginPage extends StatelessWidget {
                             height: 1.4,
                           ),
                           children: [
-                            TextSpan(
-                              text:
-                                  'By creating or logging into an account you are agreeing with our ',
+                            const TextSpan(
+                              text: 'By creating or logging into an account you are agreeing with our ',
                             ),
                             TextSpan(
                               text: 'Terms and Conditions',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.blue,
                                 decoration: TextDecoration.underline,
                               ),
                             ),
-                            TextSpan(text: ' and '),
+                            const TextSpan(text: ' and '),
                             TextSpan(
                               text: 'Privacy Policy',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.blue,
                                 decoration: TextDecoration.underline,
                               ),
                             ),
-                            TextSpan(text: '.'),
+                            const TextSpan(text: '.'),
                           ],
                         ),
                       ),

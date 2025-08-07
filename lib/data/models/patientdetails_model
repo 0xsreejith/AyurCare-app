@@ -1,0 +1,33 @@
+// lib/data/models/patientdetails_model.dart
+
+class PatientDetail {
+  final int id;
+  final String male;
+  final String female;
+  final int? treatmentId;
+  final String? treatmentName;
+
+  PatientDetail({
+    required this.id,
+    required this.male,
+    required this.female,
+    this.treatmentId,
+    this.treatmentName,
+  });
+
+  factory PatientDetail.fromJson(Map<String, dynamic> json) {
+    int? _toInt(dynamic v) {
+      if (v == null) return null;
+      if (v is int) return v;
+      return int.tryParse(v.toString());
+    }
+
+    return PatientDetail(
+      id: _toInt(json['id']) ?? 0,
+      male: (json['male'] ?? '').toString(),
+      female: (json['female'] ?? '').toString(),
+      treatmentId: _toInt(json['treatment']),
+      treatmentName: (json['treatment_name'] ?? json['treatmentName'])?.toString(),
+    );
+  }
+}

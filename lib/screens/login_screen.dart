@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:ayur_care_app/providers/auth_provider.dart';
 import 'package:ayur_care_app/screens/booking_screen.dart';
-import 'package:ayur_care_app/screens/home_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ayur_care_app/core/constants/app_constants.dart';
@@ -24,7 +24,7 @@ class LoginPage extends StatelessWidget {
               children: [
                 Image.asset('assets/background.jpg', fit: BoxFit.cover),
                 BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+                  filter: ImageFilter.blur(sigmaX: 7.0, sigmaY: 7.0),
                   child: Container(color: Colors.black.withOpacity(0)),
                 ),
                 Center(
@@ -134,7 +134,10 @@ class LoginPage extends StatelessWidget {
 
                           if (username.isEmpty || password.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Please enter all fields")),
+                              const SnackBar(
+                                content: Text("Please enter all fields"),
+                                backgroundColor: Colors.red,
+                              ),
                             );
                             return;
                           }
@@ -143,18 +146,38 @@ class LoginPage extends StatelessWidget {
                             context,
                             listen: false,
                           );
-                          final success = await authProvider.login(username, password);
+                          
+                          try {
+                            final success = await authProvider.login(username, password);
 
-                          if (success) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (_) =>  HomeScreen()),
-                            );
-                          } else {
-                            print(authProvider.errorMessage);
+                            if (success && authProvider.isAuthenticated) {
+                              // Show success message
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Login successful!"),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                              
+                              // Navigate to booking screen
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (_) => BookingsPage()),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(authProvider.errorMessage ?? "Login failed"),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
-
-                              SnackBar(content: Text(authProvider.errorMessage ?? "Login failed")),
+                              SnackBar(
+                                content: Text("Login error: $e"),
+                                backgroundColor: Colors.red,
+                              ),
                             );
                           }
                         },

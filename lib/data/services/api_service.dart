@@ -1,41 +1,71 @@
-// lib/data/services/api_service.dart
 import 'dart:convert';
-import 'package:ayur_care_app/core/constants/app_constants.dart';
-import 'package:ayur_care_app/data/models/branch_model.dart';
-import 'package:ayur_care_app/data/models/patient_model.dart';
-import 'package:ayur_care_app/data/models/treatment_model.dart';
-import 'package:ayur_care_app/data/models/user_model.dart';
-import 'package:http/http.dart' as http;
+import 'package:ayur_care_app/core/utils/shared_pref.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:ayur_care_app/core/constants/app_constants.dart';
+import 'package:ayur_care_app/data/models/user_model.dart';
+import 'package:ayur_care_app/data/models/patient_model.dart';
+import 'package:ayur_care_app/data/models/branch_model.dart';
+import 'package:ayur_care_app/data/models/treatment_model.dart';
 
 class ApiService {
   final String baseUrl = AppConstants.baseUrl;
   String? _token;
 
+  ApiService() {
+    _loadToken();
+  }
+
+  // Load saved token from shared preferences
+  Future<void> _loadToken() async {
+    final savedToken = await SharedPrefs.getToken();
+    if (savedToken != null) {
+      _token = savedToken;
+      debugPrint('Token loaded from SharedPrefs');
+    }
+  }
+
   void setToken(String token) {
     _token = token;
+    SharedPrefs.saveToken(token);
   }
 
   Map<String, String> get _headers {
-    final headers = <String, String>{'Content-Type': 'application/x-www-form-urlencoded'};
-    if (_token != null && _token!.isNotEmpty) headers['Authorization'] = 'Bearer $_token';
+    final headers = <String, String>{
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+    if (_token != null && _token!.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $_token';
+    }
     return headers;
   }
 
   Map<String, String> get _jsonHeaders {
-    final headers = <String, String>{'Content-Type': 'application/json'};
-    if (_token != null && _token!.isNotEmpty) headers['Authorization'] = 'Bearer $_token';
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+    };
+    if (_token != null && _token!.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $_token';
+    }
     return headers;
   }
 
   Future<Map<String, dynamic>> login(String username, String password) async {
     final uri = Uri.parse(AppConstants.loginUrl);
-    final response = await http.post(uri, headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: {'username': username, 'password': password});
+    final response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: {'username': username, 'password': password},
+    );
     debugPrint('login status: ${response.statusCode}');
     debugPrint('login body: ${response.body}');
     final data = jsonDecode(response.body);
     if (response.statusCode == 200 && (data['status'] == true || data['status'] == 'true')) {
       _token = data['token'];
+      await SharedPrefs.saveToken(_token!);
       return {
         'token': data['token'],
         if (data['user_details'] != null) 'user': User.fromJson(data['user_details']),
@@ -111,8 +141,8 @@ class ApiService {
     required double advanceAmount,
     required double balanceAmount,
     required String dateAndTime,
-    required String branch, // branch id
-    required List<String> maleTreatments, // repeated ids allowed
+    required String branch,
+    required List<String> maleTreatments,
     required List<String> femaleTreatments,
     required List<String> treatments,
   }) async {
@@ -120,25 +150,24 @@ class ApiService {
     final femaleCsv = femaleTreatments.join(',');
     final treatmentsCsv = treatments.join(',');
 
-    final body = <String, String>{
-      'name': name,
-      'executive': executive,
-      'excecutive': executive, // defensive duplicate (we keep to be safe)
-      'payment': payment,
-      'phone': phone,
-      'address': address,
-      'total_amount': totalAmount.toString(),
-      'discount_amount': discountAmount.toString(),
-      'advance_amount': advanceAmount.toString(),
-      'balance_amount': balanceAmount.toString(),
-      'date_and_time': dateAndTime,
-      'date_nd_time': dateAndTime,
-      'id': '',
-      'male': maleCsv,
-      'female': femaleCsv,
-      'branch': branch,
-      'treatments': treatmentsCsv,
-    };
+ final body = <String, String>{
+  'name': name,
+  'excecutive': executive, // ✅ use incorrect spelling as required by API
+  'payment': payment,
+  'phone': phone,
+  'address': address,
+  'total_amount': totalAmount.toString(),
+  'discount_amount': discountAmount.toString(),
+  'advance_amount': advanceAmount.toString(),
+  'balance_amount': balanceAmount.toString(),
+  'date_nd_time': dateAndTime, 
+  'id': '',
+  'male': maleTreatments.join(','),      
+  'female': femaleTreatments.join(','),  
+  'branch': branch,
+  'treatments': treatments.join(','),   
+};
+
 
     final uri = Uri.parse('$baseUrl/PatientUpdate');
     debugPrint('POST $uri body: $body');
